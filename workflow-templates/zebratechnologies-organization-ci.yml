@@ -1,4 +1,4 @@
-name: Zebra Organization CI
+name: Zebra Technologies Organization CI
 
 on:
   push:
@@ -14,4 +14,4 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Run a one-line script
-        run: echo Hello from Zebra Organization
+        run: echo Hello from Zebra Technologies Organization
