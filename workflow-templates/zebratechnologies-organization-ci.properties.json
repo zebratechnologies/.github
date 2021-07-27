@@ -4,10 +4,5 @@
     "iconName": "zebratechnologies-organization-icon",
     "categories": [
         "JavaScript"
-    ],
-    "filePatterns": [
-        "package.json$",
-        "^Dockerfile",
-        ".*\\.md$"
     ]
 }
