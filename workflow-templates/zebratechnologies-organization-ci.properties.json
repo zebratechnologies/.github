@@ -1,7 +1,7 @@
 {
     "name": "Zebra Technologies Organization Workflow",
     "description": "Zebra Technologies Organization CI workflow template.",
-    "iconName": "example-icon",
+    "iconName": "zebratechnologies-organization-ci-icon",
     "categories": [
         "Go", "JSON", "Docker" "json", "javascript", "java" "nodejs", "JavaScript"
     ],
