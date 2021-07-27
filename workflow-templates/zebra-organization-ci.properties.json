@@ -3,7 +3,7 @@
     "description": "Zebra Organization CI workflow template.",
     "iconName": "example-icon",
     "categories": [
-        "Go"
+        "Go JSON Docker json javascript jave nodejs"
     ],
     "filePatterns": [
         "package.json$",
