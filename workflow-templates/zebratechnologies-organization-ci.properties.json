@@ -3,7 +3,7 @@
     "description": "Zebra Technologies Organization CI workflow template.",
     "iconName": "zebratechnologies-organization-icon",
     "categories": [
-        ""
+        "JavaScript"
     ],
     "filePatterns": [
         "package.json$",
