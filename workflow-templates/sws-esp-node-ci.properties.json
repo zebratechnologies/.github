@@ -1,0 +1,11 @@
+{
+  "name": "ESP Node Microservice CI ",
+  "description": "ESP CI workflow template.",
+  "iconName": "sws-esp-node-icon",
+  "categories": [
+    "Continuous integration",
+    "JavaScript",
+    "Node JS",
+    "npm"
+  ]
+}
