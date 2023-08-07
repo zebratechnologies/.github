@@ -82,15 +82,18 @@ jobs:
         uses: actions/setup-node@v2
         with: 
           node-version: "18.16.1"
+      - name: Docker Login 
+        run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
+      
       - name: Verify same version already exists
-        run: echo package_check
+        run: make package_check
       
   build_publish:
     runs-on: ubuntu-latest
     needs: [test, lint, package_check]
     steps:
       - uses: actions/checkout@v2
-      # Before use below action will require add seceret variables vaules for ESP_ACR_ENDPOINT, ESP_ACR_USERNAME and ESP_ACR_PASSWORD
+      # Before using the below steps the seceret variables need available on the repository or organization level
       - name: Docker Login 
         run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
       - name:  Docker build 
