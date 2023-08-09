@@ -15,12 +15,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # GIT checkout from the requested branch
       - uses: actions/checkout@v2
+      # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v2
         with: 
           node-version: "18.16.1"
-      
+      # Cache node_modules for performance improvements
       - name: Cache node modules
         id: lint-cache-nodemodules
         uses: actions/cache@v2
@@ -35,17 +37,23 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
       - name: Install npm packages
-        # Below will prevent to install npm packages if they are installed
+        # if the node_modules already  cached, then no need to install npm packages
         if: steps.lint-cache-nodemodules.outputs.cache-hit != 'true'
         run: npm install
 
       - name:  Run lint
-        run : npm run lint 
+        run: npm run lint 
   test:
     runs-on: ubuntu-latest
 
     steps:
+      # GIT checkout from the requested branch
       - uses: actions/checkout@v2
+      # Setup node environment for application
+      - name: Use Node JS
+        uses: actions/setup-node@v2
+        with: 
+          node-version: "18.16.1"
       
       - name: Cache node modules
         id: test-cache-nodemodules
@@ -53,53 +61,57 @@ jobs:
         env:
           cache-name: test-cache-node-modules
         with:
-          # caching node_modules
+          # Cache node_modules for performance improvements
           path: node_modules
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
-
-      - name: Use Node JS
-        uses: actions/setup-node@v2
-        with: 
-          node-version: "18.16.1"
       - name: Install npm packages
-        # Below will prevent to install npm packages if they are installed
+        # if the node_modules already  cached, then no need to install npm packages
         if: steps.test-cache-nodemodules.outputs.cache-hit != 'true'
         run: npm install
+        # Run test cases for the application 
       - name: Run Unit tests with coverage
-        run: npm run test:coverage:json_summary
+        run: npm run test:coverage
   # We will add more steps with package_check 
   package_check:
     runs-on: ubuntu-latest
 
     steps:
+      # GIT checkout from the requested branch
       - uses: actions/checkout@v2
-      
+      # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v2
         with: 
           node-version: "18.16.1"
+      # Login to the docker container registry to publish docker images 
+      # Before using the below steps the seceret variables need available on the repository or organization level
       - name: Docker Login 
         run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
-      
+      # Verify that same docker image exists or not 
       - name: Verify same version already exists
         run: make package_check
       
   build_publish:
     runs-on: ubuntu-latest
+    # Once all job runs have finished then publish the docker job will start running
     needs: [test, lint, package_check]
     steps:
+      # GIT checkout from the requested branch
       - uses: actions/checkout@v2
+      # Login to the docker container registry to publish docker images 
       # Before using the below steps the seceret variables need available on the repository or organization level
       - name: Docker Login 
         run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
+      # Build docker image
       - name:  Docker build 
         run: |
           export RELEASE_VERSION=$(cat package.json | jq -r .version)
           make container_build
+      # Publish docker image 
       - name: Docker publish 
         run: |
           export RELEASE_VERSION=$(cat package.json | jq -r .version)
