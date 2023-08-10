@@ -1,4 +1,4 @@
-name: ESP Node Microservers CI  
+name: ESP Microservers CI  
 
 # Controls when the workflow will run
 on:
