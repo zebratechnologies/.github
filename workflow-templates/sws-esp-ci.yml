@@ -1,12 +1,7 @@
-name: ESP Microservers CI  
+name: ESP Microservers CI
 
 # Controls when the workflow will run
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 #  Some of the jobs run in parallel mode.
@@ -20,7 +15,7 @@ jobs:
       # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v2
-        with: 
+        with:
           node-version: "18.16.1"
       # Cache node_modules for performance improvements
       - name: Cache node modules
@@ -41,8 +36,8 @@ jobs:
         if: steps.lint-cache-node-modules.outputs.cache-hit != 'true'
         run: npm install
 
-      - name:  Run lint
-        run: npm run lint 
+      - name: Run lint
+        run: npm run lint
   test:
     runs-on: ubuntu-latest
 
@@ -52,9 +47,9 @@ jobs:
       # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v2
-        with: 
+        with:
           node-version: "18.16.1"
-      
+
       - name: Cache node modules
         id: test-cache-node-modules
         uses: actions/cache@v2
@@ -72,10 +67,10 @@ jobs:
         # If the node_modules are already cached, then no need to install npm packages
         if: steps.test-cache-node-modules.outputs.cache-hit != 'true'
         run: npm install
-        # Run test cases for the application 
+        # Run test cases for the application
       - name: Run Unit tests with coverage
         run: npm run test:coverage
-  # We will add more steps with package_check 
+  # We will add more steps with package_check
   package_check:
     runs-on: ubuntu-latest
 
@@ -85,16 +80,16 @@ jobs:
       # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v2
-        with: 
+        with:
           node-version: "18.16.1"
-      # login to the docker container registry to publish docker images 
+      # login to the docker container registry to publish docker images
       # Before using the below steps the secret variables need available on the repository or organization level
-      - name: Docker Login 
+      - name: Docker Login
         run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
-      # Verify that the same docker image exists or not 
+      # Verify that the same docker image exists or not
       - name: Docker image tag verify
         run: make package_check
-      
+
   build_publish:
     runs-on: ubuntu-latest
     # Once all job runs have finished then publish the docker job will start running
@@ -102,17 +97,29 @@ jobs:
     steps:
       # GIT checkout from the requested branch
       - uses: actions/checkout@v2
-      # log in to the docker container registry to publish docker images 
+      # log in to the docker container registry to publish docker images
       # Before using the below steps the secret variables need available on the repository or organization level
-      - name: Docker Login 
+      - name: Docker Login
         run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
       # Build a docker image
-      - name:  Docker build 
+      - name: Docker build
         run: |
           export RELEASE_VERSION=$(cat package.json | jq -r .version)
           make container_build
-      # Publish the docker image 
-      - name: Docker publish 
+      # Publish the docker image
+      - name: Docker publish
         run: |
           export RELEASE_VERSION=$(cat package.json | jq -r .version)
           make container_publish
+
+      # Tag  the branch
+      - name: Tag Git Branch
+        run: |
+          export RELEASE_VERSION=$(cat package.json | jq -r .version)
+          if [ "${GITHUB_REF##*/}" != "main" ]; then
+            RELEASE_VERSION="$RELEASE_VERSION-dev"
+          fi
+          git config user.email "esp-github-runner@zebra.com"
+          git config --global user.name "ESP Github Runner"
+          git tag -a "v$RELEASE_VERSION" -m "Release v$RELEASE_VERSION"
+          git push origin "v$RELEASE_VERSION"
