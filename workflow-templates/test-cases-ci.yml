@@ -50,19 +50,18 @@ jobs:
       - name: Run Unit tests FOR CI
         env:
           NODE_ENV: test
-        run: npm run ci -- --coverageThreshold="$THRESHOLD"
+        run: make test_cases_ci
   
       # Run test cases for the application 
       - name: Run Report Generation
         if: ${{ always() }}
-        run: npm run report -- $GREEN_TEST_PERCENT $YELLOWGREEN_TEST_PERCENT
+        run: make test_cases_report
 
       # Read File and Save to Variable
       - name: Read file
         if: ${{ always() }}
         id: file
-        run: |
-          echo "DATA=$(cat coverage/summary.txt | base64 -w 0)" >> $GITHUB_ENV
+        run: make save_file_to_environment
         shell: bash
       
       # Add Comment to Github.
