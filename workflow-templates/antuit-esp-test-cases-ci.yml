@@ -1,4 +1,4 @@
-name: ESP Allocation Test Cases CI  
+name: ESP Test Cases CI
 
 # Controls when the workflow will run
 on:
@@ -56,28 +56,12 @@ jobs:
       - name: Run Report Generation
         if: ${{ always() }}
         run: make test_cases_report
-
-      # Read File and Save to Variable
-      - name: Read file
-        if: ${{ always() }}
-        id: file
-        run: make save_file_to_environment
-        shell: bash
       
       # Add Comment to Github.
       - name: Update comment with test results
         if: ${{ always() }}
-        uses: actions/github-script@v7.0.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-              const issue_number = context.issue.number;
-              const repository = context.repo;
-              const identifier = '<!-- Test Results -->';
-              const decodedData = Buffer.from(process.env.DATA, 'base64').toString('utf8');
-              const body = `${identifier}\n${decodedData}`;
-              await github.rest.issues.createComment({
-                ...repository,
-                issue_number: issue_number,
-                body: body,
-              });
+        env:
+          ISSUE_NUMBER: ${{github.event.number}}
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make comment GITHUB_OWNER=$(echo $REPO | cut -d'/' -f1) GITHUB_REPO=$(echo $REPO | cut -d'/' -f2)
