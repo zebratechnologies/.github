@@ -1,0 +1,15 @@
+{
+  "name": "Antuit ESP Test Cases CI",
+  "description": "Antuit ESP Test Cases CI workflow template.",
+  "iconName": "sws-esp-icon",
+  "categories": [
+    "Continuous integration",
+    "JavaScript",
+    "Node JS",
+    "npm",
+    "Angular",
+    "AngularJS",
+    "Angular+AngularJS",
+    "React"
+  ]
+}
