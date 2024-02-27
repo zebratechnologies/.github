@@ -1,0 +1,67 @@
+name: Antuit ESP Test Cases CI
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [ "main"]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "main" ]
+env:
+  GREEN_TEST_PERCENT: ${{ secrets.GREEN_TEST_PERCENT }}
+  YELLOWGREEN_TEST_PERCENT: ${{ secrets.YELLOWGREEN_TEST_PERCENT }}
+  THRESHOLD: '{"global": {"statements": ${{ secrets.THRESHOLD_STMT }}, "functions": ${{ secrets.THRESHOLD_FUNC }}}}'
+
+#  Some of the jobs run in parallel mode.
+jobs:
+  testCasesCI:
+    runs-on: ubuntu-latest
+
+    steps:
+      # GIT checkout from the requested branch
+      - name: Checkout to Current Branch
+        uses: actions/checkout@v4.1.1
+
+      # Setup node environment for application
+      - name: Use Node JS
+        uses: actions/setup-node@v2
+        with: 
+          node-version: "18.16.1"
+      
+      - name: Cache node modules
+        id: test-cache-node-modules
+        uses: actions/cache@v2
+        env:
+          cache-name: test-cache-node-modules
+        with:
+          # Cache node_modules for performance improvements
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Install npm packages
+      
+        # If the node_modules are already cached, then no need to install npm packages
+        if: steps.test-cache-node-modules.outputs.cache-hit != 'true'
+        run: npm install
+        # Run test cases for the application 
+      - name: Run Unit tests FOR CI
+        env:
+          NODE_ENV: test
+        run: make test_cases_ci
+  
+      # Run test cases for the application 
+      - name: Run Report Generation
+        if: ${{ always() }}
+        run: make test_cases_report
+      
+      # Add Comment to Github.
+      - name: Update comment with test results
+        if: ${{ always() }}
+        env:
+          ISSUE_NUMBER: ${{github.event.number}}
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make comment GITHUB_OWNER=$(echo $REPO | cut -d'/' -f1) GITHUB_REPO=$(echo $REPO | cut -d'/' -f2)
