@@ -1,4 +1,4 @@
-name: ESP Test Cases CI
+name: Antuit ESP Test Cases CI
 
 # Controls when the workflow will run
 on:
