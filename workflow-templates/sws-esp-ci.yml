@@ -1,4 +1,4 @@
-name: ESP Microservers CI  
+name: ESP Microservers CI
 
 # Controls when the workflow will run
 on:
@@ -18,7 +18,7 @@ jobs:
       # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v3
-        with: 
+        with:
           node-version: "18.16.1"
       # Cache node_modules for performance improvements
       - name: Cache node modules
@@ -39,7 +39,7 @@ jobs:
         if: steps.lint-cache-node-modules.outputs.cache-hit != 'true'
         run: npm install
 
-      - name:  Run lint
+      - name: Run lint
         run: npm run lint
   test:
     runs-on: ubuntu-latest
@@ -50,9 +50,9 @@ jobs:
       # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v3
-        with: 
+        with:
           node-version: "18.16.1"
-      
+
       - name: Cache node modules
         id: test-cache-node-modules
         uses: actions/cache@v2
@@ -70,10 +70,10 @@ jobs:
         # If the node_modules are already cached, then no need to install npm packages
         if: steps.test-cache-node-modules.outputs.cache-hit != 'true'
         run: npm install
-        # Run test cases for the application 
+        # Run test cases for the application
       - name: Run Unit tests with coverage
         run: npm run test
-  # We will add more steps with package_check 
+  # We will add more steps with package_check
   package_check:
     runs-on: ubuntu-latest
 
@@ -85,14 +85,14 @@ jobs:
         uses: actions/setup-node@v3
         with: 
           node-version: "18.16.1"
-      # login to the docker container registry to publish docker images 
+      # login to the docker container registry to publish docker images
       # Before using the below steps the secret variables need available on the repository or organization level
-      - name: Docker Login 
+      - name: Docker Login
         run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
-      # Verify that the same docker image exists or not 
+      # Verify that the same docker image exists or not
       - name: Docker image tag verify
         run: make package_check
-      
+
   build_publish:
     runs-on: ubuntu-latest
     # Once all job runs have finished then publish the docker job will start running
@@ -102,17 +102,17 @@ jobs:
       - uses: actions/checkout@v3
       # log in to the docker container registry to publish docker images 
       # Before using the below steps the secret variables need available on the repository or organization level
-      - name: Docker Login 
+      - name: Docker Login
         run: docker login ${{ secrets.ESP_ACR_ENDPOINT }} -u ${{ secrets.ESP_ACR_USERNAME }} -p ${{ secrets.ESP_ACR_PASSWORD }}
       # Build a docker image
-      - name:  Docker build 
+      - name: Docker build
         run: |
           export RELEASE_VERSION=$(cat package.json | jq -r .version)
           if [ "${GITHUB_REF##*/}" != "main" ]; then
             RELEASE_VERSION="$RELEASE_VERSION-dev"
           fi
           make container_build
-      
+      # Create Trivy Scan report
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         env:
@@ -126,7 +126,7 @@ jobs:
             severity: ${{env.ESP_DOCKER_SCAN_LOG_LEVEL}}
             output: 'results.sarif'
           
-      # Publish the docker image
+      # Publish the docker scan report
       - name: Publish Scan Report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -148,7 +148,7 @@ jobs:
           if [ "${GITHUB_REF##*/}" != "main" ]; then
             RELEASE_VERSION="$RELEASE_VERSION-dev"
           fi
-          git config user.email "esp-github-runner@example.com"
+          git config user.email "esp-github-runner@zebra.com"
           git config --global user.name "ESP Github Runner"
           git tag -a "v$RELEASE_VERSION" -m "Release v$RELEASE_VERSION"
           git push origin "v$RELEASE_VERSION"
