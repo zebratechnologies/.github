@@ -72,7 +72,7 @@ jobs:
         run: npm install
         # Run test cases for the application
       - name: Run Unit tests with coverage
-        run: npm run test
+        run: npm run test:coverage
   # We will add more steps with package_check
   package_check:
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
       # Setup node environment for application
       - name: Use Node JS
         uses: actions/setup-node@v3
-        with: 
+        with:
           node-version: "18.16.1"
       # login to the docker container registry to publish docker images
       # Before using the below steps the secret variables need available on the repository or organization level
