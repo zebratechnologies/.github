@@ -5,7 +5,6 @@ on:
   workflow_dispatch:
 env:
   ESP_ACR_ENDPOINT: ${{ secrets.ESP_ACR_ENDPOINT }}
-  ESP_SERVICE_APP_NAME: ''
 
 #  Some of the jobs run in parallel mode.
 jobs:
@@ -98,6 +97,14 @@ jobs:
     # Once all job runs have finished then publish the docker job will start running
     needs: [test, lint, package_check]
     steps:
+      - name: Set up variables
+        id: vars
+        run: |
+          if [ "${{ secrets.ESP_SERVICE_APP_TYPE }}" = "BE" ]; then
+            echo "ESP_IMAGE_NAME=esp-${{ secrets.ESP_SERVICE_APP_NAME }}/api" >> $GITHUB_ENV
+          else
+            echo "ESP_IMAGE_NAME=esp-${{ secrets.ESP_SERVICE_APP_NAME }}" >> $GITHUB_ENV
+          fi
       # GIT checkout from the requested branch
       - uses: actions/checkout@v3
       # log in to the docker container registry to publish docker images 
@@ -118,7 +125,7 @@ jobs:
         env:
           ESP_DOCKER_SCAN_LOG_LEVEL: ${{ secrets.DOCKER_SCAN_LEVEL || 'CRITICAL' }}
         with:
-            image-ref: 'esp-${{ env.ESP_SERVICE_APP_NAME }}/api'
+            image-ref: '${{ env.ESP_IMAGE_NAME }}'
             format: 'template'
             template: '@/contrib/sarif.tpl'
             ignore-unfixed: false
