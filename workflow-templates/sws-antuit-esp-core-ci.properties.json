@@ -1,6 +1,6 @@
 {
-  "name": "Antuit ESP Test Cases CI",
-  "description": "Antuit ESP Test Cases CI workflow template.",
+  "name": "Antuit ESP Core CI",
+  "description": "Antuit ESP Core CI workflow template.",
   "iconName": "sws-esp-icon",
   "categories": [
     "Continuous integration",

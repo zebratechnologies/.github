@@ -1,0 +1,16 @@
+{
+  "name": "ESP Microservices CI with Trivy",
+  "description": "ESP CI workflow template.",
+  "iconName": "sws-esp-icon",
+  "categories": [
+    "Continuous integration",
+    "JavaScript",
+    "Node JS",
+    "npm",
+    "Angular",
+    "AngularJS",
+    "Angular+AngularJS",
+    "Docker",
+    "React"
+  ]
+}

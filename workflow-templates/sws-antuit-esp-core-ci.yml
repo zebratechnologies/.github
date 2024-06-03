@@ -1,4 +1,4 @@
-name: Antuit ESP Test Cases CI
+name: Antuit ESP Core CI
 
 # Controls when the workflow will run
 on:
@@ -64,4 +64,61 @@ jobs:
           ISSUE_NUMBER: ${{github.event.number}}
           REPO: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILE_TO_POST: 'coverage/summary.txt'
+        run: make comment GITHUB_OWNER=$(echo $REPO | cut -d'/' -f1) GITHUB_REPO=$(echo $REPO | cut -d'/' -f2)
+  eslintReportCI:
+    runs-on: ubuntu-latest
+
+    steps:
+      # GIT checkout from the requested branch
+      - name: Checkout to Current Branch
+        uses: actions/checkout@v4.1.1
+
+      # Setup node environment for application
+      - name: Use Node JS
+        uses: actions/setup-node@v2
+        with: 
+          node-version: "18.16.1"
+      
+      - name: Cache node modules
+        id: test-cache-node-modules
+        uses: actions/cache@v2
+        env:
+          cache-name: test-cache-node-modules
+        with:
+          # Cache node_modules for performance improvements
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Install npm packages
+      
+        # If the node_modules are already cached, then no need to install npm packages
+        if: steps.test-cache-node-modules.outputs.cache-hit != 'true'
+        run: npm install
+
+      # Used for command to execute
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      # Run test cases for the application 
+      - name: Run Report Generation JSON
+        if: ${{ always() }}
+        run: make lint_report
+
+      # Run test cases for the application 
+      - name: Run Report Generation JSON
+        if: ${{ always() }}
+        run: make lint_data
+      
+      # Add Comment to Github.
+      - name: Update comment with test results
+        if: ${{ always() }}
+        env:
+          ISSUE_NUMBER: ${{github.event.number}}
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILE_TO_POST: 'lint_report_output.json'
         run: make comment GITHUB_OWNER=$(echo $REPO | cut -d'/' -f1) GITHUB_REPO=$(echo $REPO | cut -d'/' -f2)
