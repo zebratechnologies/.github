@@ -1,8 +1,11 @@
 {
-  "name": "SETP Bot",
-  "description": "SETP Bot workflow template.",
+  "name": "SETP Security Bot",
+  "description": "SETP Security Bot workflow template.",
   "iconName": "setpBotIcon",
   "categories": [
-    "Continuous integration"
+    "Continuous integration",
+    "Security",
+    "SETP",
+    "Dependencies"
   ]
 }
