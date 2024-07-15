@@ -1,0 +1,8 @@
+{
+  "name": "SETP Bot",
+  "description": "SETP Bot workflow template.",
+  "iconName": "setpBotIcon",
+  "categories": [
+    "Continuous integration"
+  ]
+}
