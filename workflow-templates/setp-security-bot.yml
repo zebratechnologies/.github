@@ -22,6 +22,7 @@ jobs:
         # if: contains(steps.metadata.outputs.dependency-names, 'my-dependency') && steps.metadata.outputs.update-type == 'version-update:semver-patch'
         # This line will merge all updates expect ones to 'some-dependency'
         # if: ${{ !contains(steps.metadata.outputs.dependency-names, 'some-dependency') }}
+        # If your repo does not allow merge commits, you can change the '--merge' to either '--squash' or '--rebase' to comply with your repo's settings
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
