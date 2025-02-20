@@ -1,0 +1,108 @@
+name: Trivy scan for Docker and Code
+# on: [workflow_dispatch]
+on: 
+ pull_request:
+   types: [opened, synchronize, reopened]
+jobs:
+ trivy-scan:
+   name: Trivy Security Scan
+   runs-on: ubuntu-latest
+   strategy:
+     matrix:
+       python-version: ["3.10"]
+   steps:
+     - name: Checkout Repository
+       uses: actions/checkout@v4
+     - name: Setup Python
+       uses: actions/setup-python@v4
+       with:
+         python-version: ${{ matrix.python-version }}
+     - name: Configure PIP
+       run: |
+         mkdir -p ~/.pip
+         echo '[global]' > ~/.pip/pip.conf
+         echo 'index-url = https://${{ secrets.ARTIFACT_USERNAME }}:${{ secrets.ARTIFACT_PASSWORD }}@${{ secrets.ARTIFACT_VIRTUAL_ENDPOINT }}' >> ~/.pip/pip.conf
+     - name: Install Dependencies
+       run: |
+         python -m pip install --upgrade pip
+         pip install setuptools wheel twine --index-url=https://pypi.org/simple
+         pip install -r requirements.txt --no-cache-dir
+     - name: Build Docker Image
+       run: |
+         docker build -t sws-dms-docker-image:latest \
+           --build-arg ARTIFACT_USERNAME=${{ secrets.ARTIFACT_USERNAME }} \
+           --build-arg ARTIFACT_PASSWORD=${{ secrets.ARTIFACT_PASSWORD }} \
+           --build-arg ARTIFACT_VIRTUAL_ENDPOINT=${{ secrets.ARTIFACT_VIRTUAL_ENDPOINT }} \
+           --build-arg PYTHON_DOCKER_IMAGE=3.10-alpine \
+           -f Dockerfile-github . --progress=plain
+     - name: Install and Update Trivy
+       uses: aquasecurity/setup-trivy@v0.2.2
+     - name: Run Trivy Scan on Source Code
+       id: trivy-source-scan
+       run: |
+         echo "Running Trivy filesystem scan..."
+         trivy fs --severity CRITICAL,HIGH --format json --output trivy-source-report.json .
+         cat trivy-source-report.json || echo "No vulnerabilities found in source scan."
+     - name: Run Trivy Scan on Docker Image
+       id: trivy-docker-scan
+       run: |
+         echo "Running Trivy image scan..."
+         trivy image --severity CRITICAL,HIGH --format json --output trivy-docker-report.json sws-dms-docker-image:latest
+         cat trivy-docker-report.json || echo "No vulnerabilities found in Docker scan."
+     - name: Upload Trivy Reports as Artifacts
+       uses: actions/upload-artifact@v4
+       with:
+         name: trivy-reports
+         path: |
+           trivy-source-report.json
+           trivy-docker-report.json
+     - name: Check for Critical Vulnerabilities
+       run: |
+         SOURCE_CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL" or .Severity=="HIGH")] | length' trivy-source-report.json)
+         DOCKER_CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL" or .Severity=="HIGH")] | length' trivy-docker-report.json)
+         echo "Source vulnerabilities found: $SOURCE_CRITICAL"
+         echo "Docker vulnerabilities found: $DOCKER_CRITICAL"
+         if [[ $SOURCE_CRITICAL -gt 0 ]]; then
+           echo "fail_source=true" >> $GITHUB_ENV
+         else
+           echo "fail_source=false" >> $GITHUB_ENV
+         fi
+         if [[ $DOCKER_CRITICAL -gt 0 ]]; then
+           echo "fail_docker=true" >> $GITHUB_ENV
+         else
+           echo "fail_docker=false" >> $GITHUB_ENV
+         fi
+     - name: Post Trivy Reports as a PR Comment
+       if: always()
+       uses: actions/github-script@v7
+       with:
+         github-token: ${{ secrets.GITHUB_TOKEN }}
+         script: |
+           const fs = require('fs');
+           function formatReport(reportPath) {
+             if (!fs.existsSync(reportPath)) return "⚠ No report available.";
+             try {
+               const parsed = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+               return parsed.Results && parsed.Results.length > 0
+                 ? parsed.Results.map(r => `### 🔍 ${r.Target}\n` +
+                     (r.Vulnerabilities ? r.Vulnerabilities.map(v =>
+                       `- **${v.Severity}**: ${v.Title} (${v.VulnerabilityID})\n`
+                     ).join("") : "✅ No vulnerabilities found.")
+                   ).join("\n")
+                 : "✅ No vulnerabilities found.";
+             } catch (err) {
+               return "❌ Error parsing report.";
+             }
+           }
+           const prComment = `### 🔍 Trivy Security Scan Report\n\n` +
+                             `#### 📝 **Source Code Scan**\n${formatReport('trivy-source-report.json')}\n\n` +
+                             `#### 🐳 **Docker Image Scan**\n${formatReport('trivy-docker-report.json')}`;
+           github.rest.issues.createComment({
+             issue_number: context.payload.pull_request.number,
+             owner: context.repo.owner,
+             repo: context.repo.repo,
+             body: prComment.substring(0, 64000) // GitHub max comment size
+           });
+     - name: Fail Workflow if Critical Vulnerabilities Found
+       if: env.fail_source == 'true' || env.fail_docker == 'true'
+       run: exit 1
