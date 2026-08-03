@@ -2,8 +2,10 @@ name: JFrog Curation Audit (npm)
 
 # Audits npm dependencies against Zebra JFrog Curation policies.
 # Required secrets in the Dev GitHub Environment:
-#   JFROG_URL, JFROG_USERNAME, JFROG_PASSWORD
+#   JF_URL, JF_USER, JF_PASSWORD
 # Fork PRs are skipped — GitHub does not expose environment secrets to workflows from forks.
+# For pull_request events, Dev must allow all branches (not "Protected branches only"),
+# because GitHub runs PR workflows on refs/pull/<number>/merge.
 
 on:
   workflow_dispatch:
@@ -30,15 +32,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18.19.1"
+          node-version: "18.16.0"
           cache: npm
 
       - name: Set up JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          JF_URL: ${{ secrets.JFROG_URL }}
-          JF_USER: ${{ secrets.JFROG_USERNAME }}
-          JF_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+          JF_URL: ${{ secrets.JF_URL }}
+          JF_USER: ${{ secrets.JF_USER }}
+          JF_PASSWORD: ${{ secrets.JF_PASSWORD }}
 
       - name: Validate JFrog connection
         run: jf rt ping
