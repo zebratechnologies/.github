@@ -18,6 +18,7 @@ on:
 permissions:
   contents: read
   actions: read
+  pull-requests: write
 
 env:
   WORKING_DIRS: './packages/app,./packages/lib'
@@ -56,4 +57,68 @@ jobs:
         run: npm ci
 
       - name: JFrog Curation Audit
-        run: jf curation-audit --working-dirs="$WORKING_DIRS" --run-native
+        id: curation
+        run: |
+          set +e
+          jf curation-audit --working-dirs="$WORKING_DIRS" --run-native 2>&1 | tee curation-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Comment curation summary on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- jfrog-curation-audit -->';
+            const exitCode = '${{ steps.curation.outputs.exit_code }}';
+
+            let output = '';
+            try {
+              output = fs.readFileSync('curation-output.txt', 'utf8').trim();
+            } catch (e) {
+              output = 'No output captured.';
+            }
+
+            // GitHub comments have a 65536 char limit; keep room for wrapper markdown.
+            const MAX = 60000;
+            if (output.length > MAX) {
+              output = output.slice(0, MAX) + '\n...\n(output truncated, see the workflow logs for the full report)';
+            }
+
+            const status = exitCode === '0'
+              ? ':white_check_mark: **No blocked packages found.**'
+              : ':warning: **Blocked packages detected.** Review the details below and consider updating the affected dependencies.';
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const body = [
+              marker,
+              '### JFrog Curation Audit (npm Monorepo)',
+              '',
+              status,
+              '',
+              '<details><summary>Full audit output</summary>',
+              '',
+              '```text',
+              output,
+              '```',
+              '',
+              '</details>',
+              '',
+              `[View workflow run](${runUrl})`,
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
