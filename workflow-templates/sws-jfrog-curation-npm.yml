@@ -1,9 +1,12 @@
 name: JFrog Curation Audit (npm)
 
 # Audits npm dependencies against Zebra JFrog Curation policies.
-# Required secrets (JF_URL, JF_USER, JF_PASSWORD) in GitHub Environments:
-#   Dev     — push and workflow_dispatch (may use "Protected branches only")
-#   Dev-CI  — pull_request only; set deployment branches to "No restriction"
+# Required secrets in GitHub Environments (Dev and Dev-CI):
+#   JFROG_URL              - e.g. https://artifactory-us.zebra.com
+#   JFROG_USERNAME         - Artifactory service account username
+#   JFROG_IDENTITY_TOKEN   - Artifactory identity/reference token
+# Dev     — push and workflow_dispatch (may use "Protected branches only")
+# Dev-CI  — pull_request only; set deployment branches to "No restriction"
 # Fork PRs are skipped — GitHub does not expose environment secrets to workflows from forks.
 
 on:
@@ -37,9 +40,9 @@ jobs:
       - name: Set up JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          JF_URL: ${{ secrets.JF_URL }}
-          JF_USER: ${{ secrets.JF_USER }}
-          JF_PASSWORD: ${{ secrets.JF_PASSWORD }}
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_USER: ${{ secrets.JFROG_USERNAME }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_IDENTITY_TOKEN }}
 
       - name: Validate JFrog connection
         run: jf rt ping

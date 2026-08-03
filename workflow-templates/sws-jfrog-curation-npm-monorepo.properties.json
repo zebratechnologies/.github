@@ -1,6 +1,6 @@
 {
   "name": "JFrog Curation Audit (npm Monorepo)",
-  "description": "Audit npm dependencies in monorepos or npm workspaces against Zebra JFrog Curation policies. Update working_dirs in the workflow to match your package paths.",
+  "description": "Audit npm dependencies in monorepos or npm workspaces against Zebra JFrog Curation policies. Requires JFROG_URL, JFROG_USERNAME, and JFROG_IDENTITY_TOKEN in Dev and Dev-CI environments.",
   "iconName": "setp-security-bot-icon",
   "categories": [
     "Continuous integration",
