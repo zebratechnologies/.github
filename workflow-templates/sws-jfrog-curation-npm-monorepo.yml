@@ -4,6 +4,7 @@ name: JFrog Curation Audit (npm Monorepo)
 # Update working_dirs below to match your package paths.
 # Required secrets in the Dev GitHub Environment:
 #   JFROG_URL, JFROG_USERNAME, JFROG_PASSWORD
+# Fork PRs are skipped — GitHub does not expose environment secrets to workflows from forks.
 
 on:
   workflow_dispatch:
@@ -22,6 +23,7 @@ env:
 jobs:
   curation-audit:
     name: JFrog Curation Audit
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment: Dev
 

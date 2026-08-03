@@ -3,6 +3,7 @@ name: JFrog Curation Audit (npm)
 # Audits npm dependencies against Zebra JFrog Curation policies.
 # Required secrets in the Dev GitHub Environment:
 #   JFROG_URL, JFROG_USERNAME, JFROG_PASSWORD
+# Fork PRs are skipped — GitHub does not expose environment secrets to workflows from forks.
 
 on:
   workflow_dispatch:
@@ -18,6 +19,7 @@ permissions:
 jobs:
   curation-audit:
     name: JFrog Curation Audit
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment: Dev
 
