@@ -1,0 +1,12 @@
+{
+  "name": "JFrog Curation Audit (pip)",
+  "description": "Audit Python (pip) dependencies against Zebra JFrog Curation policies. Requires JFROG_URL, JFROG_USERNAME, and JFROG_IDENTITY_TOKEN in Dev and Dev-CI environments.",
+  "iconName": "setp-security-bot-icon",
+  "categories": [
+    "Continuous integration",
+    "Python",
+    "pip",
+    "Security",
+    "JFrog"
+  ]
+}

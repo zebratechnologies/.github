@@ -1,6 +1,6 @@
-name: JFrog Curation Audit (npm)
+name: JFrog Curation Audit (pip)
 
-# Audits npm dependencies against Zebra JFrog Curation policies.
+# Audits Python (pip) dependencies against Zebra JFrog Curation policies.
 # Required secrets in GitHub Environments (Dev and Dev-CI):
 #   JFROG_URL              - e.g. https://artifactory-us.zebra.com
 #   JFROG_USERNAME         - Artifactory service account username
@@ -32,11 +32,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: "18.16.1"
-          cache: npm
+          python-version: "3.10"
+          cache: pip
 
       - name: Set up JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
@@ -48,8 +48,8 @@ jobs:
       - name: Validate JFrog connection
         run: jf rt ping
 
-      - name: Configure npm for Artifactory
-        run: jf npm-config --repo-resolve=npm-proxy
+      - name: Configure pip for Artifactory
+        run: jf pip-config --repo-resolve=pypi-proxy
 
       - name: JFrog Curation Audit
         id: curation
