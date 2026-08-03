@@ -1,0 +1,54 @@
+name: JFrog Curation Audit (npm Monorepo)
+
+# Audits npm dependencies in a monorepo / npm workspaces layout.
+# Update working_dirs below to match your package paths.
+# Required secrets in the Dev GitHub Environment:
+#   JFROG_URL, JFROG_USERNAME, JFROG_PASSWORD
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  WORKING_DIRS: './packages/app,./packages/lib'
+
+jobs:
+  curation-audit:
+    name: JFrog Curation Audit
+    runs-on: ubuntu-latest
+    environment: Dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Set up JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_USER: ${{ secrets.JFROG_USERNAME }}
+          JF_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+
+      - name: Validate JFrog connection
+        run: jf rt ping
+
+      - name: Configure npm for Artifactory
+        run: jf npm-config --repo-resolve=npm-proxy --run-native
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: JFrog Curation Audit
+        run: jf curation-audit --working-dirs="$WORKING_DIRS" --run-native

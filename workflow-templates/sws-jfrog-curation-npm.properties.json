@@ -1,0 +1,13 @@
+{
+  "name": "JFrog Curation Audit (npm)",
+  "description": "Audit npm dependencies against Zebra JFrog Curation security and license policies. Requires JFROG_URL, JFROG_USERNAME, and JFROG_PASSWORD in the Dev environment.",
+  "iconName": "setp-security-bot-icon",
+  "categories": [
+    "Continuous integration",
+    "JavaScript",
+    "Node JS",
+    "npm",
+    "Security",
+    "JFrog"
+  ]
+}

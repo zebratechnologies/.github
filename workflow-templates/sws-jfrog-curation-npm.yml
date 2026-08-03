@@ -1,0 +1,47 @@
+name: JFrog Curation Audit (npm)
+
+# Audits npm dependencies against Zebra JFrog Curation policies.
+# Required secrets in the Dev GitHub Environment:
+#   JFROG_URL, JFROG_USERNAME, JFROG_PASSWORD
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  curation-audit:
+    name: JFrog Curation Audit
+    runs-on: ubuntu-latest
+    environment: Dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Set up JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_USER: ${{ secrets.JFROG_USERNAME }}
+          JF_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+
+      - name: Validate JFrog connection
+        run: jf rt ping
+
+      - name: Configure npm for Artifactory
+        run: jf npm-config --repo-resolve=npm-proxy
+
+      - name: JFrog Curation Audit
+        run: jf curation-audit
